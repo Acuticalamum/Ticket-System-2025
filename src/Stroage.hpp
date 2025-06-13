@@ -21,7 +21,7 @@ template<class T>
 class FileStorage {
   public:  
   string fileStorageName;
-  const static int maxsize = 1400;
+  const static int maxsize = 900;
   MemoryRiver<node, 3> dict;
   MemoryRiver<T[maxsize], 3> list; 
 
@@ -32,6 +32,7 @@ class FileStorage {
       node x(100, 1, -1, 110); //100表示第一个块代表的key的起始地址， -1表示end
       dict.write_info(1, 1);
       dict.write_info(110, 2); //110表示块起始地址
+      dict.write_info(0, 3);
       dict.update(x, 110);
       T k[maxsize];
       list.update(k, 100);
@@ -122,10 +123,14 @@ class FileStorage {
     list.update(data, pos);
     dict.update(block, block.nodepos);
     //在文件中修改
-
+  
     if(block.size == maxsize) {
       split(block);
     }//裂成两个新块
+
+    int listsize;
+    dict.get_info(listsize, 3);
+    dict.write_info(listsize + 1, 3);
   }
   
   void deleteToken(T &x) {
@@ -152,6 +157,10 @@ class FileStorage {
 
     list.update(data, pos);
     dict.update(block, block.nodepos); //在文件中修改
+    
+    int listsize;
+    dict.get_info(listsize, 3);
+    dict.write_info(listsize - 1, 3);
   }
   
   T findToken(T &x) {
@@ -166,7 +175,41 @@ class FileStorage {
     }
     return T();
   }
+  
+  int getStorageSize() {
+    int listsize;
+    dict.get_info(listsize, 3);
+    return listsize;
+  }
 
+  void clear() {
+    dict.clear();
+    list.clear();
+    init();
+  }
+
+};
+
+template<class T>
+class Database {
+public:
+  string databaseName;
+  MemoryRiver<T, 0> base;
+  Database(string databaseName_) : databaseName(databaseName_) {
+    base.initialise(databaseName + "base");
+  }
+  int write(T &x) {
+    return base.write(x);
+  }
+  void read(T &x, int pos) {
+    base.read(x, pos);
+  }
+  void update(T &x, int pos) {
+    base.update(x, pos);
+  }
+  void clear() {
+    base.clear();
+  }
 };
 
 #endif
