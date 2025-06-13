@@ -47,7 +47,7 @@ public:
   }
 };
 
-FileStorage<Account> StroageofAccount("Account");
+FileStorage<Account> StorageofAccount("Account");
 map<String_Hash, int>login_pool;
 
 bool islogged(char* name) {
@@ -56,23 +56,30 @@ bool islogged(char* name) {
 
 bool isexist(char* name) {
   Account tmp(name);
-  return StroageofAccount.findToken(tmp).username == name;
+  return strcmp(StorageofAccount.findToken(tmp).username, name) == 0;
 }
 
 int add_user(char* c_, char* u_, char* p_, char* n_, char* m_, int g_) {//改一个首次创建直接创建g=10
+  if(StorageofAccount.getStorageSize() == 0) {
+    Account newuser(u_, p_, n_, m_, 10);
+    StorageofAccount.insertToken(newuser);
+    return 0;
+  }
+  cout << islogged(c_) << endl;
+  cout << isexist(u_) << endl;
   if(!islogged(c_) || isexist(u_)) return -1;
   Account cur(c_);
-  cur = StroageofAccount.findToken(cur);
+  cur = StorageofAccount.findToken(cur);
   if(cur.privilege <= g_) return -1;
   Account newuser(u_, p_, n_, m_, g_);
-  StroageofAccount.insertToken(newuser);
+  StorageofAccount.insertToken(newuser);
   return 0;
 }
 
 int login(char* u_, char* p_) {
   if(islogged(u_) || !isexist(u_)) return -1;
   Account cur(u_);
-  cur = StroageofAccount.findToken(cur);
+  cur = StorageofAccount.findToken(cur);
   if(strcmp(cur.password, p_)) return -1;
   login_pool.insert({convert_to_hash(u_), cur.privilege});
   return 0;
@@ -87,15 +94,37 @@ int logout(char* u_) {
 int query_profile(char* c_, char* u_) {
   if(!islogged(c_) || !isexist(u_)) return -1;
   Account cur(u_);
-  cur = StroageofAccount.findToken(cur);
+  cur = StorageofAccount.findToken(cur);
   int c_pri = login_pool.find(convert_to_hash(c_)) -> second;
   if(c_pri <= cur.privilege && strcmp(u_, c_)) return -1;
   cout << cur.Account_to_string();
   return 0;
 }
 
-void modify_profile(char* c_, char* u_, char* p_, char* n_, char* m_, int g_) {
-  
+int modify_profile(char* c_, char* u_, char* p_, char* n_, char* m_, int g_) {
+  if(!islogged(c_) || !isexist(u_)) return -1;
+  Account cur(u_);
+  cur = StorageofAccount.findToken(cur);
+  int c_pri = login_pool.find(convert_to_hash(c_)) -> second;
+  if(c_pri <= cur.privilege && strcmp(u_, c_)) return -1;
+  if(c_pri <= g_) return -1;
+  StorageofAccount.deleteToken(cur);
+  if(strlen(p_)) strcpy(cur.password, p_);
+  if(strlen(n_)) strcpy(cur.name, p_);
+  if(strlen(m_)) strcpy(cur.mailaddr, n_);
+  if(g_ != -1) cur.privilege = g_;
+  cout << cur.Account_to_string();
+  StorageofAccount.insertToken(cur);
+  return 0;
+}
+
+void logout_all() {
+  login_pool.clear();
+}
+
+void clean_account() {
+  StorageofAccount.clear();
+  login_pool.clear();
 }
 
 #endif
