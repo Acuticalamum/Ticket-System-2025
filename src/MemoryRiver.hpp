@@ -84,6 +84,10 @@ class MemoryRiver {
       file.close();
     }
 
+    void clear() {
+      remove(file_name.c_str());
+    }
+
 };
 
 
